@@ -47,6 +47,8 @@ class KnightTour:
     def init(self):
         '''
         Finds all possible moves on this board and creates a neuron for each one
+        Find neighbours will determine which moves are legal and will keep the knight on the board
+        Adapted from https://github.com/NiloofarShahbaz/knight-tour-neural-network
         '''
         neuron_num = 0
         for x1 in range(self.board_size[0]):
@@ -79,6 +81,7 @@ class KnightTour:
             self.print_board(self.board)
 
     def initialise_neurons(self):
+        # iterates through each neuron and runs its initialisation function.
         for neuron in self.neural_network:
             neuron.init()
         if DEBUG:
@@ -99,6 +102,9 @@ class KnightTour:
             """
             number_of_changes = 0
             number_of_active = 0
+            # next neuron state is = to current neuron state +4 - the sum of that neurons neighbours, minus its own output
+            # this function taken from https://github.com/NiloofarShahbaz/knight-tour-neural-network as it worked far better
+            # than the function described by Takefuji and Lee
             for neuron in (self.neural_network):
                 sum_of_neighbours = 0
                 for neighbour in neuron.neighbours:
@@ -140,10 +146,8 @@ class KnightTour:
       
     def check_degree(self):
         """
-        Returns True if all of the vertices have degree=2.
-        for all active neurons updates the degree of its
-        vertices and then checks if degree has any number
-        other than 2.
+        checks that all neurons have degree of 2, meaning they have been entered and then exited
+        note: this does not guarantee a true knights tour
         """
         active_neuron_indices = self.get_active_neuron_indices()
         # gets the index of active neurons.
@@ -179,19 +183,19 @@ class KnightTour:
             """
             Finds and prints the solution.
             """
-
-            visited = []
             current_vertex = (0, 0)
             labels = np.zeros(self.board_size, dtype=np.int16)
             # gets the index of active neurons.
             active_neuron_indices = self.get_active_neuron_indices()
+            # convert individual neurons vertices to an array for manipulating with NumPy functions
+            # these vertices are not used anywhere else, and are not manipulated in any way, so we can just
+            # leave them in an array
             neuron_vertices = []
             for neuron in self.neural_network:
                 neuron_vertices.append(neuron.vertices[0])
-
             i = 0
+            # remove neurons one by one. Once all are gone, solution is complete
             while len(active_neuron_indices) != 0:
-                visited.append(current_vertex)
                 labels[current_vertex] = i
                 i += 1
                 # finds the index of neurons that have this vertex(current_vertex).
@@ -211,6 +215,7 @@ class KnightTour:
         '''
         finds a closed knights tour
         #todo flags to include open tours
+
         '''
         even = False
         time = 0
@@ -240,8 +245,8 @@ class KnightTour:
             
     def check_connected_components(self):
         """
-        Checks weather the solution is a knight's tour and it's not
-        two or more independent hamiltonian graphs.
+        Checks to see if the solution is a true knights tour and not just individual cycles
+        Adapted (slightly) from https://github.com/NiloofarShahbaz/knight-tour-neural-network
         """
         # gets the index of active neurons.
         active_neuron_indices = self.get_active_neuron_indices()
@@ -256,6 +261,7 @@ class KnightTour:
         Performs a DFS algorithm from a starting active neuron visiting all active neurons. Neurons will slows be removed from
         the active neuron list as they are checked, so at the end we should have no active neighbours remaining. If we do it 
         means we have a hamiltonian graph, not a cycle.
+        Adapted (slightly) from https://github.com/NiloofarShahbaz/knight-tour-neural-network
         """
         # removes the neuron from the active neurons list.
         active_neurons.remove(neuron)
@@ -286,12 +292,14 @@ class Neuron:
 
     def init(self):
         '''
-        initialise neuron to randomised values
+        initialise neuron otuput to randomised values and state to 0
         '''
         self.output = np.random.randint(2, dtype=np.int16)
         self.state = 0
 
-header = ['m','n','time to complete ms']
+# used for testing purposes only
+
+'''header = ['m','n','time to complete ms']
 
 board_size_x = 6
 board_size_y = 6
@@ -301,11 +309,11 @@ previousTime = 0
 runUpdate = True
 tour = KnightTour((board_size_x, board_size_x))
 for trial in range(50):
-    for i in [0,2,4,6,8,10,12]:
-        for j in range(7):
+    for i in [2,4,6]:
+        for j in range(1):
             del tour
             board_size_x = 6 + i
-            board_size_y = 6 + j
+            board_size_y = 6 + i
             print("Solving", board_size_x, board_size_y)
             tour = KnightTour((board_size_x, board_size_y))
             even = False
@@ -313,7 +321,7 @@ for trial in range(50):
             count = 0
             runTime = 0
             while runUpdate == True:
-                if count > 400000: 
+                if count > 10000000: 
                     logData = ['failed',board_size_x, board_size_y,(runTime/1000/1000),count]
                     print('Failed',board_size_x,board_size_y,'in',round((runTime/1000/1000),3),'ms in',count,'iterations')
                     with open('knights_tour_log.csv', 'a', encoding='UTF8', newline='') as csvfile:
@@ -360,4 +368,4 @@ for trial in range(50):
                         start = 0
                         runUpdate = False
                     else:
-                        even = False
+                        even = False'''
